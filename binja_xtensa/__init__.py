@@ -7,6 +7,7 @@ from binaryninja.enums import (BranchType, Endianness, FlagRole,
 from .instruction import Instruction
 from .disassembly import disassemble_instruction
 from .lifter import lift
+from .binaryview import ESPFirmware
 
 __all__ = ['XtensaLE']
 
@@ -130,5 +131,7 @@ def register_stuff():
     # calling convention without showing __convention("default") on every function
     esp_plat = arch.standalone_platform
     esp_plat.default_calling_convention = arch.calling_conventions['default']
+
+    ESPFirmware.register()
 
 register_stuff()
