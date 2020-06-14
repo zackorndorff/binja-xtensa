@@ -1,0 +1,120 @@
+40106d62:	602120        	abs	a2, a2
+40100af8:	805560        	add	a5, a5, a6
+4010009b:	f0c112        	addi	a1, a1, -16
+40100665:	2e1b      	addi.n	a2, a14, 1
+40100f92:	10d222        	addmi	a2, a2, 0x1000
+401000af:	119a      	add.n	a1, a1, a9
+40101a9a:	903220        	addx2	a3, a2, a2
+401013fb:	a04d00        	addx4	a4, a13, a0
+4010080b:	b05270        	addx8	a5, a2, a7
+40100000:	100000        	and	a0, a0, a0
+40106046:	d64267        	ball	a2, a6, 40106020 
+40100498:	418937        	bany	a9, a3, 401004dd 
+4020563a:	285437        	bbc	a4, a3, 40205666 
+401007c1:	046d07        	bbci	a13, 0, 401007c9 
+4020558c:	0cd527        	bbs	a5, a2, 4020559c 
+40101052:	12e207        	bbsi	a2, 0, 40101068 
+401002e0:	721327        	beq	a3, a2, 40100356 
+401002f8:	6ce326        	beqi	a3, 128, 40100368 
+40100656:	06c216        	beqz	a2, 401006c6 
+401005cc:	078c      	beqz.n	a7, 401005d0 
+40100d79:	08ab47        	bge	a11, a4, 40100d85 
+40101682:	2fc8e6        	bgei	a8, 32, 401016b5 
+40100b10:	02b3c7        	bgeu	a3, a12, 40100b16 
+401000f6:	1272f6        	bgeui	a2, 7, 4010010c 
+401008f8:	0393d6        	bgez	a3, 40100935 
+40100370:	4a2327        	blt	a3, a2, 401003be 
+4010165a:	13c6a6        	blti	a6, 32, 40101671 
+401001ef:	f53237        	bltu	a2, a3, 401001e8 
+40100a8f:	0a52b6        	bltui	a2, 5, 40100a9d 
+40101455:	019d96        	bltz	a13, 40101472 
+40100491:	4bc6a7        	bnall	a6, a10, 401004e0 
+40100681:	0394f7        	bne	a4, a15, 40100688 
+401005a5:	18bc66        	bnei	a12, 16, 401005c1 
+401000d3:	005356        	bnez	a3, 401000dc 
+40100ce5:	54cc      	bnez.n	a4, 40100cee 
+401006b4:	040247        	bnone	a2, a4, 401006bc 
+40100030:	004100        	break	1, 0
+4010000a:	04c205        	call0	40104c2c 
+401000d9:	0000c0        	callx0	a0
+40226798:	002080        	excw
+4010008e:	140000        	extui	a0, a0, 0, 2
+402043ae:	504000        	iitlb	a0
+4010000d:	000000        	ill
+402062b3:	002000        	isync
+40100013:	fffe46        	j	40100010 
+40205d58:	0007a0        	jx	a7
+40102537:	009222        	l16si	a2, a2, 0
+40100b85:	001e22        	l16ui	a2, a14, 0
+401003a7:	1f2c42        	l32i	a4, a12, 124
+401000b1:	3108      	l32i.n	a0, a1, 12
+40100004:	ffff21        	l32r	a2, 40100000 
+40100381:	1c0c32        	l8ui	a3, a12, 28
+4020317d:	0020c0        	memw
+4010073d:	834e60        	moveqz	a4, a14, a6
+40101690:	b30550        	movgez	a0, a5, a5
+401002fb:	88a022        	movi	a2, 136
+40101655:	fc1c      	movi.n	a12, 31
+40207de9:	a3c720        	movltz	a12, a7, a2
+40105322:	067d      	mov.n	a7, a6
+401026a2:	937d70        	movnez	a7, a13, a7
+40102b75:	d14420        	mul16s	a4, a4, a2
+401000cb:	c11240        	mul16u	a1, a2, a4
+40100513:	82dd30        	mull	a13, a13, a3
+40101446:	60d0e0        	neg	a13, a14
+4010156f:	40f440        	nsau	a4, a4
+4010087d:	206650        	or	a6, a6, a5
+402292db:	505040        	pitlb	a4, a0
+40226cb4:	50f200        	rdtlb1	a0, a2
+40201166:	000080        	ret
+401000b6:	f00d      	ret.n
+40105964:	003310        	rfi	3
+4020293e:	503b80        	ritlb0	a8, a11
+401000fe:	006330        	rsil	a3, 3
+40106bc8:	03ea50        	rsr.ccount	a5
+4010115b:	03c030        	rsr.depc	a3
+4010114c:	03b170        	rsr.epc1	a7
+40101152:	03b260        	rsr.epc2	a6
+40101155:	03b350        	rsr.epc3	a5
+40101143:	03e880        	rsr.exccause	a8
+401058d0:	03d140        	rsr.excsave1	a4
+40101158:	03ee40        	rsr.excvaddr	a4
+40237fc5:	03ed00        	rsr.icountlevel	a0
+4010014b:	03e6c0        	rsr.ps	a12
+40105900:	0303e0        	rsr.sar	a14
+401058fd:	002010        	rsync
+40100b8d:	005ec2        	s16i	a12, a14, 0
+401000a6:	006212        	s32i	a1, a2, 0
+401000a1:	3109      	s32i.n	a0, a1, 12
+4010029b:	304c22        	s8i	a2, a12, 48
+4010025a:	a16300        	sll	a6, a3
+401008cf:	11d2d0        	slli	a13, a2, 3
+4020d39d:	b13050        	sra	a3, a5
+40100182:	316000        	srai	a6, a0, 16
+40106de2:	816320        	src	a6, a3, a2
+40101408:	913040        	srl	a3, a4
+401009bb:	41d320        	srli	a13, a2, 3
+40206587:	402300        	ssa8l	a3
+40201256:	404000        	ssai	0
+40202247:	401e00        	ssl	a14
+401015bd:	400900        	ssr	a9
+401000a3:	c01190        	sub	a1, a1, a9
+40101b27:	d0dc00        	subx2	a13, a12, a0
+40104e17:	e0c800        	subx4	a12, a8, a0
+40204926:	f04000        	subx8	a4, a0, a0
+402054aa:	005000        	syscall
+40100010:	007200        	waiti	2
+4010593c:	13b120        	wsr.epc1	a2
+4010593f:	13e830        	wsr.exccause	a3
+40100050:	13d100        	wsr.excsave1	a0
+40100020:	13d300        	wsr.excsave3	a0
+40105944:	13ee20        	wsr.excvaddr	a2
+40106e30:	13e320        	wsr.intclear	a2
+40100154:	13e6c0        	wsr.ps	a12
+4010590d:	1303f0        	wsr.sar	a15
+40100007:	13e720        	wsr.vecbase	a2
+401001da:	306000        	xor	a6, a0, a0
+40219992:	61c2f0        	xsr.eps2	a15
+402284a6:	61d2e0        	xsr.excsave2	a14
+401058ba:	61d320        	xsr.excsave3	a2
+40238c12:	616000        	xsr.ibreakenable	a0
