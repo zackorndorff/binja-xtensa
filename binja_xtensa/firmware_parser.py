@@ -1,4 +1,18 @@
 #!/usr/bin/env python
+"""
+ESP8266 firmware parser
+
+Very hacky at the moment. This logic is based on a quick reading of the
+following sources:
+    * https://github.com/espressif/esptool/wiki/Firmware-Image-Format
+    * https://richard.burtons.org/2015/05/17/decompiling-the-esp8266-boot-loader-v1-3b3/
+    * https://boredpentester.com/reversing-esp8266-firmware-part-3/ (that whole
+      series really)
+
+These firmware dumps seem to contain multiple binaries. So we have a rudimentary
+heuristic to find a couple binaries, which we pass back in a list to the
+binaryview to present to the user as options.
+"""
 
 import binascii
 import struct
@@ -191,6 +205,15 @@ class AppendedData:
         return f"""AppendedData(length={hex(self.length)},
 data_bv_offset={hex(self.data_bv_offset)})
 """
+
+    def load(self, bv, parent_bv):
+        bv.add_auto_segment(0, self.length,
+                            self.data_bv_offset, self.length,
+                            (SegmentFlag.SegmentContainsCode |
+                             SegmentFlag.SegmentContainsData |
+                             SegmentFlag.SegmentReadable     |
+                             SegmentFlag.SegmentWritable     |
+                             SegmentFlag.SegmentExecutable))
 
     @classmethod
     def parse(cls, bv, bv_offset):

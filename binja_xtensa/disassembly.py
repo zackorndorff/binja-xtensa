@@ -1,8 +1,20 @@
+"""
+Xtensa disassembly rendering
+
+The idea is instruction.py handles instruction decoding, then to get
+human-readable disassembly, we call disassemble_instruction from this file.
+
+The lifter should *not* need the information in this file. If it does, move that
+computation into the decoder.
+"""
 from binaryninja import InstructionTextToken
 from binaryninja.enums import InstructionTextTokenType
 
 from .instruction import Instruction, InstructionType, sign_extend
 
+# Helpers to generate Binary Ninja InstructionTextTokens, since the names are
+# so long. We also do some cosmetic transformations of the encoded immediates
+# here.
 def _get_space():
     return InstructionTextToken(InstructionTextTokenType.TextToken, "    ")
 
@@ -61,7 +73,16 @@ def _get_b4constu(insn, _):
     return InstructionTextToken(InstructionTextTokenType.IntegerToken,
                                 str(val), val, size=4)
 
-# each of these should return a binja insntexttoken
+# I wanted the mechanical instruction -> disassembly process to be as easy to
+# write as possible. Thus, it's structured so I can take the example instruction
+# out of the manual and type it in here with slight modification, and it'll
+# mostly work. Then I just have to check for nonobvious differences and move on
+# to the next instruction.
+
+# This table defines the logic that backs up each of those things from the
+# manual.
+
+# each of these should return a binja InstructionTextToken
 _disassembly_fmts = {
     "ar": lambda insn, _: _get_reg_tok("a" + str(insn.r)),
     "as": lambda insn, _: _get_reg_tok("a" + str(insn.s)),
@@ -89,10 +110,15 @@ _disassembly_fmts = {
     "b4constu": _get_b4constu,
 
     # Oddball
+    # Probably should have been an inline0... but I hadn't hacked that in yet
+    # when I dealt with ADDI.N
     "addi_n_imm": _get_addi_n_imm,
 }
 def _dis(fmt_str, *args):
-    """Helper to create disassembly functions for different formats"""
+    """Helper to create disassembly functions for different formats
+    
+    See below to see how it's used.
+    """
     def inner(insn, addr):
         fmts = fmt_str.split()
         tokens = []
@@ -103,6 +129,11 @@ def _dis(fmt_str, *args):
             if idx > 0:
                 tokens.append(_get_comma())
 
+            # For one-off encodings, I wanted a way to specify that in the _dis
+            # invocation for the instruction. These "inline" encodings are
+            # similar to the ones in the decoder, but they're distinct at a
+            # programmatic level; they just share a name and are used together
+            # :)
             if fmt.startswith("inline"):
                 tok_idx = int(fmt[len("inline"):])
                 try:
@@ -117,7 +148,12 @@ def _dis(fmt_str, *args):
     return inner
 
 def disassemble_instruction(insn, addr):
-    """Return Binary Ninja InstructionTextTokens for instruction"""
+    """Return Binary Ninja InstructionTextTokens for instruction
+
+    So to disassemble an instruction, we call Instruction.decode with the bytes,
+    then we call disassemble_instruction with the returned instruction and the
+    address it's loaded at.
+    """
     func = None
     try:
         func = globals()["_disassemble_" + insn.mnem.replace(".", "_")]
@@ -133,6 +169,10 @@ def disassemble_instruction(insn, addr):
     elif insn.instruction_type == InstructionType.RRI8:
         return _disassemble_rri8(insn, addr)
     else:
+        # Fallback for when we don't have a fallback for a particular
+        # instruction type.
+        # If I had to rewrite this, I'd remove the type-fallbacks and just show
+        # a warning in fallback cases, as we do here.
         text = []
         text.append(InstructionTextToken(InstructionTextTokenType.InstructionToken,
                                          insn.mnem))
@@ -170,6 +210,10 @@ def _disassemble_RSR(insn, addr):
 
 _disassemble_WSR = _disassemble_XSR = _disassemble_RSR
 
+# As I mentioned in the decoding code, instruction formats aren't too useful in
+# Xtensa... but we do fall back to these for a few simple instructions. It's
+# almost easier to list an instruction below than it is to verify the default is
+# correct.
 _disassemble_rrr = _dis("ar as at")
 _disassemble_rrrn = _dis("ar as at")
 _disassemble_rri8 = _dis("at as simm8")
@@ -320,8 +364,7 @@ _disassemble_SRLI = _dis("ar at s")
 _disassemble_SSA8B = _dis("as")
 _disassemble_SSA8L = _dis("as")
 _disassemble_SSAI = _dis("inline0",
-                         lambda insn, _: _get_imm8_tok(
-                             insn.s + ((insn.t & 1) << 4) ))
+                         lambda insn, _: _get_imm8_tok(insn.inline0(_)))
 _disassemble_SSL = _dis("as")
 _disassemble_SSR = _dis("as")
 _disassemble_SYSCALL = _dis("")

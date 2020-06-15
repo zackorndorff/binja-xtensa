@@ -1,3 +1,34 @@
+"""
+Xtensa instruction decoder
+
+This was created in roughly 10 hours over the course of a weekend with the
+Xtensa manual in one window and Vim in the other. If you plan to make changes, I
+suggest looking at section 7.3.1 "Opcode Maps" in the Xtensa manual, as the code
+follows it directly (which explains the odd order of instructions). Overall, it
+near-exactly matches the manual, with the exception of a few simplifications
+involving instructions I didn't care about, and also fixing (<5) errors in the
+manual.
+
+The separation of concerns between instruction decoding, disassembly, and
+lifting is roughly as follows: anything that can be done without knowing the
+address is done as part of instruction decoding. There might be a couple places
+where I declare the computation with a lambda in decoding, which is called
+during disassembly with the address. Anyway, all the decoding are static
+methods.
+
+When I got to actual disassembly, I ran into a few issues where yes I had
+decoded the instruction per the type "RRR", "RRI8", etc, but the immediate was
+further encoded. In some cases (say, making a signed value from the imm8), I've
+added methods to the Instruction class that will do that transformation. In more
+instruction-specific cases, I added the ability to define a lambda inline that
+does the specified transformation to the immediate (say it's stored shifted
+right by a couple bits). In many cases, I've called it "inline0", then that is
+referenced by the "inline0" in the disassembly code, as well as in the lifting
+code.
+
+Actual instruction decoding starts in Instruction.decode.
+
+"""
 from enum import Enum
 
 
@@ -38,6 +69,7 @@ def mnem(_mnem, func, validity_predicate=None, **outer_kwargs):
                 if key.startswith("inline"):
                     bound = value.__get__(insn, insn.__class__)
                     setattr(insn, key, bound)
+        return insn
     return inner
 
 
@@ -46,6 +78,7 @@ def _decode_components(insn, insn_bytes, components):
         setattr(insn, comp, globals()["decode_" + comp](insn_bytes))
 
 
+# lambdas to decode the various control signals
 decode_op0 = lambda insn_bytes: insn_bytes[0] & 0xf
 decode_op1 = lambda insn_bytes: (insn_bytes[2]) & 0xf
 decode_op2 = lambda insn_bytes: (insn_bytes[2] >> 4) & 0xf
@@ -55,7 +88,6 @@ decode_r = lambda insn_bytes: (insn_bytes[1] >> 4) & 0xf
 decode_n = lambda insn_bytes: (insn_bytes[0] >> 4) & 3
 decode_m = lambda insn_bytes: (insn_bytes[0] >> 6) & 3
 decode_sr = lambda insn_bytes: insn_bytes[1]
-# TODO: handle signedness here
 decode_imm4 = lambda insn_bytes: (insn_bytes[2] >> 4) & 0xf
 decode_imm8 = lambda insn_bytes: insn_bytes[2]
 decode_imm12 = lambda insn_bytes: (insn_bytes[2] << 4) + ((insn_bytes[1] >> 4) & 0xf)
@@ -72,6 +104,9 @@ decode_z = lambda insn_bytes: (insn_bytes[0] >> 6) & 1
 
 
 class Instruction:
+
+    # Instruction class starts with a bunch of utility methods. For the actual
+    # decoding, see the "decode" classmethod.
     def __init__(self):
         self.op0 = None
         self.op1 = None
@@ -94,6 +129,9 @@ class Instruction:
         self.valid = None
         self.instruction_type = None
 
+    # These are simple transformations done to immediate values and such.
+    # Usually based on a line in the docs that say "the assembler will do such
+    # and such to the immediate"
     def extui_shiftimm(self):
         if self.mnem != "EXTUI":
             return None
@@ -114,6 +152,9 @@ class Instruction:
             return None
         return sign_extend(self.imm12, 12)
 
+    # For PC-relative instructions, we need the address to compute the
+    # "target_offset". In non-branching cases, I've tried to instead call it a
+    # "mem_offset" (although I suspect I missed a couple).
     def offset_imm6(self, addr):
         return addr + 4 + self.imm6
 
@@ -193,6 +234,8 @@ class Instruction:
             raise Exception(f"Invalid handler for insn {self.mnem} in _mem_offset_map")
         return func(addr)
 
+    # In a few places, an immediate is an index into these lookup tables. The
+    # RTN in the docs calls it "B4CONST", so I do too.
     _b4const_vals = [
         -1, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 16, 32, 64, 128, 256,
     ]
@@ -228,6 +271,7 @@ class Instruction:
         return self._b4constu_vals[enc]
 
     # Table 5-128 Numerical List of Special Registers
+    # This allows us to render "RSR.REGNAME" versus RSR at, <thing>
     _special_reg_map = {
         0: "LBEG",
         1: "LEND",
@@ -316,23 +360,11 @@ class Instruction:
         except KeyError:
             return str(self.sr)
 
-    @staticmethod
-    def _call_from_map(map, index, insn, insn_bytes):
-        try:
-            name = "_decode_" + map[index]
-        except IndexError:
-            raise Exception(f"Unsupported index {index} in map {map}")
-
-        func = getattr(Instruction, name, None)
-        if not func:
-            raise Exception(f"Unimplemented: {name}")
-
-        return func(insn, insn_bytes)
-
     # For instruction decoding, we follow the tables in xtensa.pdf
     # (7.3.1 Opcode Maps)
     # We begin with Table 7-192 Whole Opcode Space. This switches off op0 to
-    # subtables
+    # subtables, which we then filter through to sub-sub-tables, etc. 10 hours
+    # later, we made it to the bottom :)
     _op0_map = [
         "QRST", "L32R", "LSAI", "LSCI",
         "MAC16", "CALLN", "SI", "B",
@@ -342,14 +374,20 @@ class Instruction:
     @classmethod
     def decode(cls, insn_bytes):
         insn = Instruction()
-        #cls._call_from_map(cls._op0_map, insn.op0, insn, insn_bytes)
-        cls._do_lut(insn, insn_bytes,
-                    [("op0", decode_op0)],
-                    "op0",
-                    cls._op0_map
-        )
-        return insn
+        return cls._do_tbl_layer(insn, insn_bytes, "op0", cls._op0_map)
 
+    # At each "layer" of the tables, we look up some control signal. In this
+    # case, it was op0. op0 has 4 bits for a 16 entry table. We can do one of
+    # two things: a sub-table or a leaf (instruction). By the magic of Python
+    # metaprogramming, we lookup the classmethod _decode_<item>, which we
+    # implement either as a function for a table layer, or we use the mnem
+    # helper to indicate it's a leaf function.
+
+    # These are the actual instructions found in the first table. Arguments to
+    # mnem are mnemonic, instruction type, an optional predicate specifying if
+    # the encoding is valid (for when the manual says t must be 0 or something),
+    # and then "inline" kwargs that end up defining methods for disassembly and
+    # lifting to use.
     _decode_L32R = mnem("L32R", "RI16") # op0, t, imm16
     _decode_L32I_N = mnem("L32I.N", "RRRN",
                           inline0=lambda insn, _: insn.r << 2)
@@ -358,6 +396,20 @@ class Instruction:
     _decode_ADD_N = mnem("ADD.N", "RRRN")
     _decode_ADDI_N = mnem("ADDI.N", "RRRN",
                           inline0=lambda insn, _: insn.t if insn.t != 0 else -1)
+
+
+    # The next three functions implement the metaprogramming glue between layers
+    @classmethod
+    def _do_tbl_layer(cls, insn, insn_bytes, component, map):
+        """Do the lookups for one table layer.
+        
+        component is the string to decode, like "op1", or "r".
+        map is the map to look up in
+        """
+        return cls._do_lut(insn, insn_bytes,
+                    [(component, globals()["decode_" + component])],
+                    component,
+                    map)
 
     @classmethod
     def _do_lut(cls,
@@ -403,17 +455,21 @@ class Instruction:
         value = getattr(insn, value_to_look_up)
         return cls._call_from_map(table_to_look_in, value, insn, insn_bytes)
 
-    @classmethod
-    def _do_tbl_layer(cls, insn, insn_bytes, component, map):
-        """Do the lookups for one table layer.
-        
-        component is the string to decode, like "op1", or "r".
-        map is the map to look up in
-        """
-        return cls._do_lut(insn, insn_bytes,
-                    [(component, globals()["decode_" + component])],
-                    component,
-                    map)
+    @staticmethod
+    def _call_from_map(map, index, insn, insn_bytes):
+        """Part of the operation of _do_lut, see there for comments"""
+        try:
+            name = "_decode_" + map[index]
+        except IndexError:
+            raise Exception(f"Unsupported index {index} in map {map}")
+
+        func = getattr(Instruction, name, None)
+        if not func:
+            raise Exception(f"Unimplemented: {name}")
+
+        return func(insn, insn_bytes)
+
+    # From here down, it's a pretty mechanical translation of the Xtensa docs
 
     _qrst_map = [
         "RST0", "RST1", "RST2", "RST3",
@@ -421,14 +477,16 @@ class Instruction:
         "LSCX", "LSC4", "FP0", "FP1",
         None, None, None, None,
     ]
-
     @classmethod
     def _decode_QRST(cls, insn, insn_bytes):
         # Formats RRR, CALLX, RSR (t, s, r, op2 vary)
         # That means op1 is the commonality we'll map off of
         return cls._do_tbl_layer(insn, insn_bytes, "op1", cls._qrst_map)
 
-    _decode_EXTUI = mnem("EXTUI", "RRR", # RRR is dubious for this...
+    _decode_EXTUI = mnem("EXTUI",
+                         "RRR", # RRR is dubious for this... it's complex
+                         # IIRC inline0 ended up being named something else but
+                         # I didn't want to reuse the number
                          inline1=lambda insn, _: insn.op2 + 1
                          )
 
@@ -438,7 +496,6 @@ class Instruction:
         "ADD", "ADDX2", "ADDX4", "ADDX8",
         "SUB", "SUBX2", "SUBX4", "SUBX8",
     ]
-
     @classmethod
     def _decode_RST0(cls, insn, insn_bytes):
         # Formats RRR and CALLX (t, s, r vary)
@@ -579,7 +636,8 @@ class Instruction:
     _decode_SSL = mnem("SSL", "RRR", lambda insn: insn.t == 0)
     _decode_SSA8L = mnem("SSA8L", "RRR", lambda insn: insn.t == 0)
     _decode_SSA8B = mnem("SSA8B", "RRR", lambda insn: insn.t == 0)
-    _decode_SSAI = mnem("SSAI", "RRR", lambda insn: insn.t == 0)
+    _decode_SSAI = mnem("SSAI", "RRR", lambda insn: insn.t == 0,
+                        inline0=lambda insn, _: insn.s + ((insn.t & 1) << 4) )
     _decode_RER = mnem("RER", "RRR")
     _decode_WER = mnem("WER", "RRR")
     _decode_ROTW = mnem("ROTW", "RRR", lambda insn: insn.s == 0)
@@ -1126,8 +1184,13 @@ class Instruction:
     _decode_NOP_N = mnem("NOP.N", "RRRN")
     _decode_ILL_N = mnem("ILL.N", "RRRN")
 
-    # If we didn't need op0, op1, op2 to get here, then treat them as don't
-    # care for now. We only decode the items that will (probably) be displayed.
+    # Here's where we do the per-format decoding. This isn't quite as useful as
+    # I thought it would be, since Xtensa's instruction formats are not at all
+    # rigid (they sneak immediates into whatever bits are available, as they
+    # should).
+
+    # We actually don't keep the instruction bytes around for the disassembly
+    # stage, so everything has to be parsed out somewhere in the decoding stage.
     @classmethod
     def _decode_fmt_RRR(cls, insn, insn_bytes):
         insn.length = 3

@@ -1,3 +1,50 @@
+"""
+Binary Ninja Xtensa (and ESP8266) support
+
+This package offers several features:
+
+Xtensa (little-endian):
+    * correct length decoding for nearly all instructions
+    * correct mnemonic decoding for nearly all instructions
+    * fully correct disassembly for most instructions you'll see. In some places
+      there are comments documenting skipped features. The disassembler took over
+      10 hours to write, and the firmware I'm looking at didn't have a lot of
+      floating point instructions :)
+    * objdump-equivalent disassembly for all the instructions in the firmware I
+      had laying around (complete with a pytest scaffolding to test this)
+    * lifting to BNIL for 80+ of the most common instructions. This is enough
+      for useful decompilation, courtesy of the Binary Ninja core.
+    * a CallingConvention that matches what the documentation says GCC does.
+      After adding this and setting it default, Binary Ninja started recognizing
+      a good amount of function arguments.
+    * declared support for whatever ELF architecture the ESP8266 tools in
+      platformio generate... so if you open up an elf it builds you, it should
+      recognize the architecture.
+
+ESP8266-specific:
+    * a BinaryView implementation that attempts to detect and load ESP8266
+      firmware dumps. The current implementation is hacky, but it's able to
+      examine multiple .bin dumps I've obtained through different methods.
+
+      * These dumps sometimes contain multiple binaries (namely, a bootloader
+        plus user code. I've added a "Open with Options" option to choose which
+        of the binaries you want to look at. By default, it tries to pick the
+        last binary containing parsed segments.
+
+What it doesn't yet do:
+    * anything with windowed registers
+    * anything with the optional vector unit
+    * disassemble and lift most of the boolean instructions
+    * lift most floating point instructions
+    * deal with special registers (I figure you might as well look at the asm
+      for that anyway)
+    * help you find `main` in a raw binary :)
+
+I've abused Python metaprogramming throughout, so it should be possible to fix
+each of the above inaccuracies on a per-instruction basis if the need arises.
+I've attempted to document how that works.
+"""
+
 from binaryninja import (Architecture, BinaryViewType, CallingConvention,
                          IntrinsicInfo, InstructionInfo, InstructionTextToken,
                          RegisterInfo, log)
@@ -9,7 +56,9 @@ from .disassembly import disassemble_instruction
 from .lifter import lift
 from .binaryview import ESPFirmware
 
+
 __all__ = ['XtensaLE']
+
 
 class XtensaLE(Architecture):
     name = 'xtensa'
@@ -39,6 +88,7 @@ class XtensaLE(Architecture):
         'a13': RegisterInfo("a13", 4, 0), # callee-saved
         'a14': RegisterInfo("a14", 4, 0), # callee-saved
         'a15': RegisterInfo("a15", 4, 0), # optional stack-frame pointer
+        'sar': RegisterInfo("sar", 1, 0), # Shift Address Register: Not a GPR
     }
 
     # Do we have flags?
@@ -50,6 +100,7 @@ class XtensaLE(Architecture):
 
     intrinsics = {
         "memw": IntrinsicInfo([], []),
+        "isync": IntrinsicInfo([], []),
     }
 
     def _decode_instruction(self, data, addr):
@@ -119,9 +170,11 @@ class XtensaCall0CallingConvention(CallingConvention):
     int_return_reg = "a2"
     high_int_return_reg = "a3"
 
+
 def register_stuff():
     XtensaLE.register()
 
+    # Register ourselves with the ELF loader
     BinaryViewType['ELF'].register_arch(94, Endianness.LittleEndian,
                                         Architecture['xtensa'])
     arch = Architecture['xtensa']
@@ -133,5 +186,6 @@ def register_stuff():
     esp_plat.default_calling_convention = arch.calling_conventions['default']
 
     ESPFirmware.register()
+
 
 register_stuff()
