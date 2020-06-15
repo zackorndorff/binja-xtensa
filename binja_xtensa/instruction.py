@@ -28,6 +28,9 @@ code.
 
 Actual instruction decoding starts in Instruction.decode.
 
+Link to the Xtensa docs/manual I was referencing:
+    https://0x04.net/~mwk/doc/xtensa.pdf
+
 """
 from enum import Enum
 
