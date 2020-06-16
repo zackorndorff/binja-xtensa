@@ -38,14 +38,25 @@ load_address={hex(self.load_address)},
 size={hex(self.size)},
 data_bv_offset={hex(self.data_bv_offset)})
 """
-    def load(self, bv, parent_bv):
+    def load(self, bv, parent_bv, outer_entry_point=None):
+        if outer_entry_point is None or not (
+                self.load_address <=
+                outer_entry_point <=
+                self.load_address + self.size):
+            permissions = (SegmentFlag.SegmentContainsCode |
+                           SegmentFlag.SegmentContainsData |
+                           SegmentFlag.SegmentReadable     |
+                           SegmentFlag.SegmentWritable     |
+                           SegmentFlag.SegmentExecutable)
+        else:
+            permissions = (SegmentFlag.SegmentContainsCode |
+                           SegmentFlag.SegmentContainsData |
+                           SegmentFlag.SegmentReadable     |
+                           SegmentFlag.SegmentExecutable)
+
         bv.add_auto_segment(self.load_address, self.size,
                             self.data_bv_offset, self.size,
-                            (SegmentFlag.SegmentContainsCode |
-                             SegmentFlag.SegmentContainsData |
-                             SegmentFlag.SegmentReadable     |
-                             SegmentFlag.SegmentWritable     |
-                             SegmentFlag.SegmentExecutable))
+                            permissions)
 
     @classmethod
     def parse(cls, bv, bv_offset):
@@ -72,6 +83,7 @@ class E9File:
         self.flash_interface = flash_interface
         self.flash_cfg = flash_cfg
         self.entry_point = entry_point
+        print("entry point:", hex(entry_point))
         self.data_bv_offset = data_bv_offset
         self.outer_size = outer_size
         self.segments = []
@@ -91,9 +103,9 @@ segments={repr(self.segments)})
     def _segments_size(self):
         return sum(i.outer_size for i in self.segments)
 
-    def load(self, bv, parent_bv):
+    def load(self, bv, parent_bv, outer_entry_point=None):
         for seg in self.segments:
-            seg.load(bv, parent_bv)
+            seg.load(bv, parent_bv, outer_entry_point)
         bv.entry_addr = self.entry_point
 
     @classmethod
@@ -136,6 +148,7 @@ class EAFile:
         self.magic2 = magic2
         self.config = config
         self.entry_point = entry_point
+        print("ENTRY_POINT:", entry_point)
         self.text_length = text_length
         self.data_bv_offset = data_bv_offset
         self.outer_size = outer_size
@@ -161,7 +174,7 @@ e9file={repr(self.e9file)})
                              SegmentFlag.SegmentDenyWrite    |
                              SegmentFlag.SegmentReadable     |
                              SegmentFlag.SegmentExecutable))
-        self.e9file.load(bv, parent_bv)
+        self.e9file.load(bv, parent_bv, self.entry_point)
         bv.entry_addr = self.entry_point
 
     @classmethod

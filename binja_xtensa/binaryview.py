@@ -9,9 +9,38 @@ import json
 import struct
 
 from binaryninja import Architecture, BinaryView, Settings, Symbol
-from binaryninja.enums import SectionSemantics, SymbolType
+from binaryninja.enums import SectionSemantics, SegmentFlag, SymbolType
 
 from .firmware_parser import parse_firmware
+from .known_symbols import known_symbols
+
+def setup_esp8266_map(bv):
+    """Define symbols for the ESP8266 ROM"""
+    for addr, symbol in known_symbols.items():
+        addr = int(addr, 0)
+
+        # https://github.com/esp8266/esp8266-wiki/wiki/Memory-Map
+        rom_start = 0x40000000
+        rom_end = 0x40010000
+
+        bv.add_auto_segment(rom_start, rom_end - rom_start, 0, 0,
+                            SegmentFlag.SegmentContainsCode |
+                            SegmentFlag.SegmentContainsData |
+                            SegmentFlag.SegmentReadable     |
+                            SegmentFlag.SegmentExecutable)
+
+        bv.add_auto_section("esp8266_ROM", rom_start, rom_end - rom_start,
+                            SectionSemantics.ExternalSectionSemantics)
+
+        if rom_start <= addr <= rom_end:
+            sym_type = SymbolType.ImportedFunctionSymbol
+        else:
+            sym_type = SymbolType.ImportedDataSymbol
+
+        bv.define_auto_symbol(Symbol(
+            sym_type,
+            addr, symbol))
+
 
 class ESPFirmware(BinaryView):
     name = "ESPFirmware"
@@ -80,6 +109,9 @@ class ESPFirmware(BinaryView):
         # Otherwise, for lack of a better choice, we end up with 0
         return self.entry_addr
 
+    def perform_get_address_size(self):
+        return 4
+
     def init(self):
 
         try:
@@ -126,6 +158,11 @@ class ESPFirmware(BinaryView):
         if self.entry_addr != 0:
             for seg in self.segments:
                 if (seg.start <= self.entry_addr <= seg.end) and seg.executable:
+                    #self.add_auto_segment(seg.start, seg.data_length,
+                    #                      seg.data_offset, seg.data_length,
+                    #                      SegmentFlag.SegmentContainsCode |
+                    #                      SegmentFlag.SegmentReadable |
+                    #                      SegmentFlag.SegmentExecutable)
                     # It seems the ReadOnlyCodeSectionSemantics kicks off the
                     # autoanalysis
                     self.add_auto_section('entry_section', seg.start,
@@ -140,4 +177,7 @@ class ESPFirmware(BinaryView):
                 SymbolType.FunctionSymbol,
                 self.entry_addr,
                 "entry"))
+
+        setup_esp8266_map(self)
+
         return True
