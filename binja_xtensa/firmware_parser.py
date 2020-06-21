@@ -167,7 +167,7 @@ e9file={repr(self.e9file)})
 """
 
     def load(self, bv, parent_bv):
-        bv.add_auto_segment(0x1000 + self.data_bv_offset, self.text_length,
+        bv.add_auto_segment(0x40200000 + self.data_bv_offset, self.text_length,
                             self.data_bv_offset, self.text_length,
                             (SegmentFlag.SegmentContainsCode |
                              SegmentFlag.SegmentContainsData |
