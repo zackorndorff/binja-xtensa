@@ -51,9 +51,9 @@ I attempt to load in symbols from the SDK's linker script so some of the
 ROM-implemented functions are less mysterious. See
 [parse_rom_ld.py](binja_xtensa/parse_rom_ld.py) for the parsing code,
 [known_symbols.py](binja_xtensa/known_symbols.py) for the database it'll apply,
-and function `setup_esp8266_map` in [binaryview.py](binja_xtensa/binaryview.py)
-for the code that applies it. This should probably be a load time option... but
-it's not at the moment :/
+and function `setup_esp8266_map` in
+[binaryview.py](binja_xtensa/binaryview.py#L17) for the code that applies it.
+This should probably be a load time option... but it's not at the moment :/
 
 ![screenshot of Binary Ninja's Open With Options showing the Loader Which
 Firmware option](screenshots/open-with-options.png)
