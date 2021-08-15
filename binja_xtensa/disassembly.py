@@ -15,8 +15,12 @@ from .instruction import Instruction, InstructionType, sign_extend
 # Helpers to generate Binary Ninja InstructionTextTokens, since the names are
 # so long. We also do some cosmetic transformations of the encoded immediates
 # here.
-def _get_space():
-    return InstructionTextToken(InstructionTextTokenType.TextToken, "    ")
+_MNEM_ALIGN = 8
+def _get_space(mnem_length):
+    # Vertically align the first operand where possible
+    spaces = 1 if mnem_length >= _MNEM_ALIGN else _MNEM_ALIGN - mnem_length
+    return InstructionTextToken(InstructionTextTokenType.TextToken,
+                                " " * spaces)
 
 def _get_comma():
     return InstructionTextToken(InstructionTextTokenType.OperandSeparatorToken, ", ")
@@ -124,7 +128,7 @@ def _dis(fmt_str, *args):
         tokens = []
         tokens.append(InstructionTextToken(InstructionTextTokenType.InstructionToken,
                                          insn.mnem))
-        tokens.append(_get_space())
+        tokens.append(_get_space(len(insn.mnem)))
         for idx, fmt in enumerate(fmts):
             if idx > 0:
                 tokens.append(_get_comma())
@@ -176,7 +180,7 @@ def disassemble_instruction(insn, addr):
         text = []
         text.append(InstructionTextToken(InstructionTextTokenType.InstructionToken,
                                          insn.mnem))
-        text.append(_get_space())
+        text.append(_get_space(len(insn.mnem)))
         text.append(InstructionTextToken(InstructionTextTokenType.TextToken,
                                      "unimplemented_disass"))
         return text
@@ -193,7 +197,7 @@ def _disassemble_RSR(insn, addr):
     tokens = []
     tokens.append(InstructionTextToken(InstructionTextTokenType.InstructionToken,
                                      mnem))
-    tokens.append(_get_space())
+    tokens.append(_get_space(len(mnem)))
     fmts = ["at"]
     for idx, fmt in enumerate(fmts):
         if idx > 0:
