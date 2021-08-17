@@ -746,3 +746,9 @@ def _lift_MUL16U(insn, addr, il):
                                            il.reg(4, _reg_name(insn, "at"))))
                            )))
     return insn.length
+
+def _lift_NOP(insn, addr, il):
+    il.append(il.nop())
+    return insn.length
+
+_lift_NOP_N = _lift_NOP
