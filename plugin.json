@@ -20,6 +20,11 @@
       "Windows",
       "Linux"
    ],
+   "installinstructions": {
+       "Darwin": "",
+       "Linux": "",
+       "Windows": ""
+   },
    "version": "0.5",
    "minimumbinaryninjaversion": 2846
 }
