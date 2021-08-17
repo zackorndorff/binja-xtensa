@@ -2,12 +2,15 @@ import binascii
 import bz2
 from collections import namedtuple
 import csv
+import os
 import re
 
 import pytest
 
 from .instruction import Instruction, InstructionType, sign_extend
 from .disassembly import disassemble_instruction, tokens_to_text
+
+DIR = os.path.dirname(__file__)
 
 def test_decode_abs():
     # RRR type
@@ -110,8 +113,8 @@ def test_addi():
 
 
 test_mnemonics_data = []
-with bz2.open("test_mnemonics.csv.bz2", "rt") as csvfile:
-    reader = csv.reader(csvfile)
+with bz2.open(os.path.join(DIR, "test_mnemonics.csv.bz2"), "rt") as fp:
+    reader = csv.reader(fp)
     for row in reader:
         opcode = row[0]
         mnem = row[1]
@@ -145,7 +148,7 @@ def test_mnem_from_file(opbytes, mnem_expected):
 
 mtd_re = r'([0-9a-f]+):\s+([0-9a-f]+)\s+([a-z0-9.]+)\s+(.*)$'
 mtd_rec = re.compile(mtd_re)
-with bz2.open("test_mnemonic_text.dump.bz2", "rt") as fp:
+with bz2.open(os.path.join(DIR, "test_mnemonic_text.dump.bz2"), "rt") as fp:
     mnem_text_dump = fp.readlines()
 
 def bswap_opcode_string(opstr):
@@ -213,7 +216,7 @@ def test_mnem_text_dump(parsed_line):
 
     assert compare_insn(expected_insn_text, disass_text)
 
-with bz2.open("torture_test.dump.bz2", "rt") as fp:
+with bz2.open(os.path.join(DIR, "torture_test.dump.bz2"), "rt") as fp:
     lots_text_dump = fp.readlines()
 lots_data = parse_test_data(lots_text_dump)
 # lots_text_dump is a bunch of dumped disassembly, uniq'd on the mnem for
@@ -230,7 +233,7 @@ def test_lots_text_dump(parsed_line):
 
     assert compare_insn(expected_insn_text, disass_text)
 
-with bz2.open("esp32_torture_test.dump.bz2", "rt") as fp:
+with bz2.open( os.path.join(DIR, "esp32_torture_test.dump.bz2"), "rt") as fp:
     esp32_lots_text_dump = fp.readlines()
 esp32_lots_data = parse_test_data(esp32_lots_text_dump)
 # lots_text_dump is a bunch of dumped disassembly, uniq'd on the mnem for
@@ -248,6 +251,7 @@ def test_lots_text_dump(esp32_parsed_line):
     addr = int(esp32_parsed_line.addr, 16)
     disass_text = tokens_to_text(disassemble_instruction(insn, addr))
 
-    expected_insn_text = (esp32_parsed_line.mnem + " " + esp32_parsed_line.rest).strip()
+    expected_insn_text = (esp32_parsed_line.mnem + " " +
+            esp32_parsed_line.rest).strip()
 
     assert compare_insn(expected_insn_text, disass_text)

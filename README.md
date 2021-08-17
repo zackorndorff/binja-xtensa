@@ -72,6 +72,14 @@ Firmware option](screenshots/open-with-options.png)
    exercise
 3. I got bored over COVID-19 lockdown in 2020 and needed something to do
 
+## Testing
+
+There are some simple tests in
+[test_instruction.py](binja_xtensa/test_instruction.py), which are mostly just
+taking uniq'd output from objdump on some binaries I had laying around and
+making sure the output matches. They can be run with `python -m pytest` from the
+root of the project.
+
 ## License
 
 This project copyright Zack Orndorff (@zackorndorff) and is available under the
