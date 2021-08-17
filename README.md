@@ -22,7 +22,7 @@ Arduino project](screenshots/hero.png)
 
 * It was written mostly as an exercise for the author. It's useful enough to
   share, but no promises it's useful for your project :)
-* Anything with windowed registers
+* Lift register windowing instructions (it disassembles most of them)
     * You need this for ESP32 support. It shouldn't be too bad to add, as long
       as you can figure out how to lift the windowed registers
 * Anything with the optional vector unit
