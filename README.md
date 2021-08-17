@@ -4,7 +4,7 @@ Tensilica Xtensa Architecture Plugin and ESP8266 Firmware Loader for Binary
 Ninja.
 
 ![screenshot of Binary Ninja showing setup and loop of a decompiled ESP8266
-Arduino project](screenshots/hero.png)
+Arduino project](https://raw.githubusercontent.com/zackorndorff/binja-xtensa/0.5/screenshots/hero.png)
 
 ## Features
 
@@ -56,7 +56,7 @@ and function `setup_esp8266_map` in
 This should probably be a load time option... but it's not at the moment :/
 
 ![screenshot of Binary Ninja's Open With Options showing the Loader Which
-Firmware option](screenshots/open-with-options.png)
+Firmware option](https://raw.githubusercontent.com/zackorndorff/binja-xtensa/0.5/screenshots/open-with-options.png)
 
 ## Future Work
 
