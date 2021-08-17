@@ -122,6 +122,7 @@ class Instruction:
         self.m = None
         self.i = None
         self.z = None
+        self.imm4 = None
         self.imm6 = None
         self.imm7 = None
         self.imm8 = None
@@ -170,7 +171,7 @@ class Instruction:
     def offset_simm12(self, addr):
         return addr + 4 + self.simm12()
 
-    def offset_call0(self, addr):
+    def offset_call(self, addr):
         return (addr & 0xfffffffc) + (sign_extend(self.offset, 18) << 2) + 4
 
     def offset_j(self, addr):
@@ -205,7 +206,10 @@ class Instruction:
         "BNEZ_N": "offset_imm6",
         "BNONE": "offset_simm8",
         "BT": "offset_simm8",
-        "CALL0": "offset_call0",
+        "CALL0": "offset_call",
+        "CALL4": "offset_call",
+        "CALL8": "offset_call",
+        "CALL12": "offset_call",
         "J": "offset_j",
     }
     def target_offset(self, addr):
@@ -1086,7 +1090,8 @@ class Instruction:
         # Formats BRI8 and BRI12 (s, r, imm8 vary)
         return cls._do_tbl_layer(insn, insn_bytes, "m", cls._bi1_map)
 
-    _decode_ENTRY = mnem("ENTRY", "BRI12")
+    _decode_ENTRY = mnem("ENTRY", "BRI12",
+                         inline0=lambda insn, _: insn.imm12 << 3)
     _decode_BLTUI = mnem("BLTUI", "BRI8")
     _decode_BGEUI = mnem("BGEUI", "BRI8")
 

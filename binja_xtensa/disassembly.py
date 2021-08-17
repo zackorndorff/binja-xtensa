@@ -37,6 +37,10 @@ def _get_imm32_tok(val):
     return InstructionTextToken(InstructionTextTokenType.IntegerToken,
                                 str(val), val, size=4)
 
+def _get_imm4(insn, _):
+    val = insn.imm4
+    return _get_imm8_tok(val)
+
 def _get_imm8(insn, _):
     val = insn.imm8
     return _get_imm8_tok(val)
@@ -102,6 +106,8 @@ _disassembly_fmts = {
 
     "s": lambda insn, _: _get_imm8_tok(insn.s),
     "t": lambda insn, _: _get_imm8_tok(insn.t),
+
+    "imm4": _get_imm4,
 
     "imm8": _get_imm8,
     "simm8": _get_simm8,
@@ -270,18 +276,23 @@ _disassemble_BREAK = _dis("s t")
 _disassemble_BREAK_N = _dis("s")
 _disassemble_BT = _dis("bs target_offset")
 
-_disassemble_CALL0 = _dis("target_offset")
+_disassemble_CALL0  = _dis("target_offset")
+_disassemble_CALL4  = _dis("target_offset")
+_disassemble_CALL8  = _dis("target_offset")
+_disassemble_CALL12 = _dis("target_offset")
 
-# Not bothering to disass register window stuff
-
-_disassemble_CALLX0 = _dis("as")
+_disassemble_CALLX0  = _dis("as")
+_disassemble_CALLX4  = _dis("as")
+_disassemble_CALLX8  = _dis("as")
+_disassemble_CALLX12 = _dis("as")
 
 _disassemble_CEIL_S = _dis("ar fs t")
 # Skipping CLAMPS, I don't care about floats
 # Skipping DHI, DHU, DHWB, DHWBI, DII, DIU, DIWB, DIWBI, DPFL, DPFR, DPFRO,
 # DPFW, DPFWO, they deal with data caching, which is an extension
 _disassemble_DSYNC = _dis("") # Just the mnem
-# Skipping ENTRY, it deals with windowed registers
+_disassemble_ENTRY = _dis("as inline0",
+                          lambda insn, _: _get_imm32_tok(insn.inline0(_)))
 _disassemble_ESYNC = _dis("") # Just the mnem
 _disassemble_EXCW = _dis("") # Just the mnem
 _disassemble_EXTUI = _dis("ar at inline0 inline1",
@@ -323,6 +334,7 @@ _disassemble_MOVI = _dis("at inline0",
 _disassemble_MOVI_N = _dis("as inline0",
                            lambda insn, _: _get_imm32_tok(insn.inline0(_)))
 _disassemble_MOV_N = _dis("at as")
+_disassemble_MOVSP = _dis("at as")
 _disassemble_NEG = _dis("ar at")
 _disassemble_NOP = _dis("")
 _disassemble_NOP_N = _dis("")
@@ -335,13 +347,18 @@ _disassemble_RDTLB1 = _dis("at as")
 _disassemble_RER = _dis("at as")
 _disassemble_RET = _dis("") # Equivalent in function to "JX a0"
 _disassemble_RET_N = _dis("") # Same function as RET
+_disassemble_RETW = _dis("")
+_disassemble_RETW_N = _dis("")
 _disassemble_RFDD = _dis("")
 _disassemble_RFDE = _dis("")
 _disassemble_RFDO = _dis("")
+_disassemble_RFWO = _dis("")
+_disassemble_RFWU = _dis("")
 _disassemble_RFE = _dis("")
 _disassemble_RFI = _dis("s")
 _disassemble_RITLB0 = _dis("at as")
 _disassemble_RITLB1 = _dis("at as")
+_disassemble_ROTW = _dis("imm4")
 _disassemble_RSIL = _dis("at s")
 _disassemble_RSYNC = _dis("")
 

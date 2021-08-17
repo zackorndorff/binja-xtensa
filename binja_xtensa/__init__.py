@@ -131,10 +131,10 @@ class XtensaLE(Architecture):
         elif insn.mnem in ["JX"]:
             result.add_branch(BranchType.IndirectBranch)
 
-        elif insn.mnem in ["CALL0"]:
+        elif insn.mnem in ["CALL0", "CALL4", "CALL8", "CALL12"]:
             result.add_branch(BranchType.CallDestination,
                               insn.target_offset(addr))
-        elif insn.mnem in ["CALLX0"]:
+        elif insn.mnem in ["CALLX0", "CALLX4", "CALLX8", "CALLX12"]:
             pass
             #result.add_branch(BranchType.IndirectBranch)
 
