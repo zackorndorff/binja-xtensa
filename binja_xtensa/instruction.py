@@ -582,7 +582,9 @@ class Instruction:
         "ISYNC", "RSYNC", "ESYNC", "DSYNC",
         None, None, None, None, # None is reserved
         "EXCW", None, None, None,
-        "MEMW", "EXTW", None, None,
+        "MEMW", "EXTW", None, "NOP",
+        # The manual doesn't show NOP here, but the NOP encoding it shows
+        # _should_ go here, and objdump disassembles it as "nop"
     ]
     @classmethod
     def _decode_SYNC(cls, insn, insn_bytes):
@@ -596,6 +598,7 @@ class Instruction:
     _decode_EXCW = mnem("EXCW", "RRR", lambda insn: insn.s == 0)
     _decode_MEMW = mnem("MEMW", "RRR", lambda insn: insn.s == 0)
     _decode_EXTW = mnem("EXTW", "RRR", lambda insn: insn.s == 0)
+    _decode_NOP = mnem("NOP", "RRR", lambda insn: insn.s == 0)
 
     _rfei_map = [
         "RFET", "RFI", "RFME", None, # None is reserved

@@ -393,4 +393,5 @@ _disassemble_WAITI = _dis("s")
 _disassemble_WDTLB = _dis("at as")
 _disassemble_WER = _dis("at as")
 _disassemble_WITLB = _dis("at as")
+_disassemble_WER = _dis("at as")
 # _disassemble_WUR = _dis("at sr") # sr not yet handled

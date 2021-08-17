@@ -1,4 +1,5 @@
 import binascii
+import bz2
 from collections import namedtuple
 import csv
 import re
@@ -109,7 +110,7 @@ def test_addi():
 
 
 test_mnemonics_data = []
-with open("test_mnemonics.csv", "r") as csvfile:
+with bz2.open("test_mnemonics.csv.bz2", "rt") as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
         opcode = row[0]
@@ -144,7 +145,7 @@ def test_mnem_from_file(opbytes, mnem_expected):
 
 mtd_re = r'([0-9a-f]+):\s+([0-9a-f]+)\s+([a-z0-9.]+)\s+(.*)$'
 mtd_rec = re.compile(mtd_re)
-with open("test_mnemonic_text.dump", "r") as fp:
+with bz2.open("test_mnemonic_text.dump.bz2", "rt") as fp:
     mnem_text_dump = fp.readlines()
 
 def bswap_opcode_string(opstr):
@@ -212,7 +213,7 @@ def test_mnem_text_dump(parsed_line):
 
     assert compare_insn(expected_insn_text, disass_text)
 
-with open("torture_test.dump", "r") as fp:
+with bz2.open("torture_test.dump.bz2", "rt") as fp:
     lots_text_dump = fp.readlines()
 lots_data = parse_test_data(lots_text_dump)
 # lots_text_dump is a bunch of dumped disassembly, uniq'd on the mnem for
@@ -226,5 +227,27 @@ def test_lots_text_dump(parsed_line):
     disass_text = tokens_to_text(disassemble_instruction(insn, addr))
 
     expected_insn_text = (parsed_line.mnem + " " + parsed_line.rest).strip()
+
+    assert compare_insn(expected_insn_text, disass_text)
+
+with bz2.open("esp32_torture_test.dump.bz2", "rt") as fp:
+    esp32_lots_text_dump = fp.readlines()
+esp32_lots_data = parse_test_data(esp32_lots_text_dump)
+# lots_text_dump is a bunch of dumped disassembly, uniq'd on the mnem for
+# brevity
+@pytest.mark.parametrize("esp32_parsed_line", esp32_lots_data)
+def test_lots_text_dump(esp32_parsed_line):
+    if esp32_parsed_line.mnem in ['rer', 'wer']:
+        # I disagree with objdump here; the manual states that these insns take
+        # arguments; objdump doesn't appear to think so? Also possible my
+        # cleanup of the output broke the objdump results?
+        pytest.xfail()
+    insn = Instruction.decode(binascii.unhexlify(esp32_parsed_line.opcode))
+    assert compare_mnem(insn.mnem, esp32_parsed_line.mnem)
+
+    addr = int(esp32_parsed_line.addr, 16)
+    disass_text = tokens_to_text(disassemble_instruction(insn, addr))
+
+    expected_insn_text = (esp32_parsed_line.mnem + " " + esp32_parsed_line.rest).strip()
 
     assert compare_insn(expected_insn_text, disass_text)
