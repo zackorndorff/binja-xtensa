@@ -55,6 +55,9 @@ def _get_simm8_s8(insn, _):
     return InstructionTextToken(InstructionTextTokenType.IntegerToken,
                                 str(val), val, size=4)
 
+def _get_rotw_simm4(insn, _):
+    return _get_imm8_tok(insn.rotw_simm4())
+
 def _get_addi_n_imm(insn, _):
     val = insn.inline0(_)
     return InstructionTextToken(InstructionTextTokenType.IntegerToken,
@@ -112,6 +115,8 @@ _disassembly_fmts = {
     "imm8": _get_imm8,
     "simm8": _get_simm8,
     "simm8_s8": _get_simm8_s8, # simm8 shifted left by 8
+
+    "rotw_simm4": _get_rotw_simm4,
 
     "target_offset": _get_target_offset,
     "mem_offset": _get_mem_offset,
@@ -196,6 +201,8 @@ def tokens_to_text(token_list):
 
     Mostly useful for testing
     """
+    for tok in token_list:
+        assert tok.value is not None
     return ''.join([tok.text for tok in token_list])
 
 def _disassemble_RSR(insn, addr):
@@ -358,7 +365,7 @@ _disassemble_RFE = _dis("")
 _disassemble_RFI = _dis("s")
 _disassemble_RITLB0 = _dis("at as")
 _disassemble_RITLB1 = _dis("at as")
-_disassemble_ROTW = _dis("imm4")
+_disassemble_ROTW = _dis("rotw_simm4")
 _disassemble_RSIL = _dis("at s")
 _disassemble_RSYNC = _dis("")
 

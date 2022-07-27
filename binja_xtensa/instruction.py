@@ -156,6 +156,15 @@ class Instruction:
             return None
         return sign_extend(self.imm12, 12)
 
+    def rotw_simm4(self):
+        """Parse immediate for the ROTW instruction
+
+        The ROTW instruction has a signed imm4 in the "t" slot.
+        """
+        if self.t is None:
+            return None
+        return sign_extend(self.t, 4)
+
     # For PC-relative instructions, we need the address to compute the
     # "target_offset". In non-branching cases, I've tried to instead call it a
     # "mem_offset" (although I suspect I missed a couple).

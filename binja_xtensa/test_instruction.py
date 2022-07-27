@@ -255,3 +255,19 @@ def test_lots_text_dump(esp32_parsed_line):
             esp32_parsed_line.rest).strip()
 
     assert compare_insn(expected_insn_text, disass_text)
+
+def test_rotw_positive():
+    rotw_insn = binascii.unhexlify("208040") # ROTW 2
+    insn = Instruction.decode(rotw_insn)
+    assert compare_mnem(insn.mnem, "ROTW")
+    assert insn.rotw_simm4() == 2
+    disass_text = tokens_to_text(disassemble_instruction(insn, 0x1000))
+    assert compare_insn(disass_text, "ROTW 2")
+
+def test_rotw_negative():
+    rotw_insn = binascii.unhexlify("f08040") # ROTW -1
+    insn = Instruction.decode(rotw_insn)
+    assert compare_mnem(insn.mnem, "ROTW")
+    assert insn.rotw_simm4() == -1
+    disass_text = tokens_to_text(disassemble_instruction(insn, 0x1000))
+    assert compare_insn(disass_text, "ROTW -1")
