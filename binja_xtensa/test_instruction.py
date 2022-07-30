@@ -271,3 +271,13 @@ def test_rotw_negative():
     assert insn.rotw_simm4() == -1
     disass_text = tokens_to_text(disassemble_instruction(insn, 0x1000))
     assert compare_insn(disass_text, "ROTW -1")
+
+# We didn't have any tests for the FPU, which lead to an undetected typo
+def test_mov_s_fpu():
+    movs_insn = binascii.unhexlify("0012fa")
+    insn = Instruction.decode(movs_insn)
+    assert compare_mnem(insn.mnem, "MOV.S")
+    # Disassembly support does not yet exist
+    #disass_text = tokens_to_text(disassemble_instruction(insn, 0x1000))
+    #assert compare_insn(disass_text, "MOV.S f1, f2")
+

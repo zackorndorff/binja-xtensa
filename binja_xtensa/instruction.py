@@ -889,13 +889,13 @@ class Instruction:
     @classmethod
     def _decode_FP1OP(cls, insn, insn_bytes):
         # Format RRR (s, r vary)
-        return cls._do_tbl_layer(insn, insn_bytes, "t", cls._fl1op_map)
+        return cls._do_tbl_layer(insn, insn_bytes, "t", cls._fp1op_map)
 
-    _decode_MOV_S = mnem("MOV_S", "RRR")
-    _decode_ABS_S = mnem("ABS_S", "RRR")
+    _decode_MOV_S = mnem("MOV.S", "RRR")
+    _decode_ABS_S = mnem("ABS.S", "RRR")
     _decode_RFR = mnem("RFR", "RRR")
     _decode_WFR = mnem("WFR", "RRR")
-    _decode_NEG_S = mnem("NEG_S", "RRR")
+    _decode_NEG_S = mnem("NEG.S", "RRR")
 
     _fp1_map = [
         None, "UN_S", "OEQ_S", "UEQ_S", # None is reserved
