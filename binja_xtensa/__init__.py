@@ -121,7 +121,7 @@ class XtensaLE(Architecture):
             raise Exception("Somehow we got here without setting length")
 
         # Add branches
-        if insn.mnem in ["RET", "RET.N"]:
+        if insn.mnem in ["RET", "RET.N", "RETW", "RETW.N"]:
             result.add_branch(BranchType.FunctionReturn)
 
         # Section 3.8.4 "Jump and Call Instructions
