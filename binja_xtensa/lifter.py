@@ -140,6 +140,8 @@ def _lift_RET(insn, addr, il):
     return insn.length
 
 _lift_RET_N = _lift_RET
+_lift_RETW = _lift_RET
+_lift_RETW_N = _lift_RET
 
 def _lift_L32I_N(insn, addr, il):
     _as = il.reg(4, _reg_name(insn, "as"))
